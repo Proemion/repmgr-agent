@@ -73,7 +73,7 @@ def main():
     # Query application servers
 
     crs.execute(
-        """SELECT id, name, ip_addr """
+        """SELECT * """
         """FROM repmgr_%s.app_servers """
         """WHERE enabled """
         """ORDER BY id""" % options.cluster
