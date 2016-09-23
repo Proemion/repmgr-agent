@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # kate: space-indent on; indent-width 4; replace-tabs on;
+#
+# Copyright © 2016 PROEMION GmbH
+#
+# Authors:
+#   Michael Ziegler <michael.ziegler@proemion.com>
 
 import sys
 import spur
