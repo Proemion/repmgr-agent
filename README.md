@@ -2,7 +2,7 @@
 
 # Mission statement
 
-Postgres clusters managed by [repmgr](repmgr.org) use an agent
+Postgres clusters managed by [repmgr](http://repmgr.org) use an agent
 to ensure application connectivity and proper node fencing.
 
 Since the agent is usually run in a situation where the cluster
