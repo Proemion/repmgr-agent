@@ -22,7 +22,7 @@ def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master):
     with spur.SshShell(hostname=remote_host["ip_addr"], missing_host_key=spur.ssh.MissingHostKey.accept) as shell:
         with shell.open(cluster_config, "wb") as pgbouncer:
             for database in databases:
-                print >> pgbouncer, "%s = %s" % (database, master)
+                print >> pgbouncer, "%s = %s" % (database["datname"], master["conninfo"])
         shell.run(["/usr/bin/service", "pgbouncer", "reload"])
 
 
@@ -60,7 +60,7 @@ def main():
         """AND datname NOT IN ('postgres')"""
     )
 
-    databases = [ row['datname'] for row in crs.fetchall() ]
+    databases = crs.fetchall()
 
     if not databases:
         raise ValueError("no databases")
