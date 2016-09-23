@@ -20,9 +20,10 @@ Create the config table that holds the application servers:
 ```sql
 CREATE TABLE repmgr_<cluster name>.app_servers (
   id SERIAL,
-  name    VARCHAR(150),
-  ip_addr VARCHAR(150),
-  enabled BOOLEAN DEFAULT 't'
+  name     VARCHAR(150),
+  ip_addr  VARCHAR(150),
+  username VARCHAR(150) DEFAULT 'postgres',
+  enabled  BOOLEAN DEFAULT 't'
 );
 ```
 
