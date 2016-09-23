@@ -43,7 +43,6 @@ def main():
     conn = psycopg2.connect(options.pgconnstring)
     crs = conn.cursor(cursor_factory = psycopg2.extras.DictCursor)
 
-    remote_hosts = ["10.10.2.227", "10.10.2.228"]
     # Query current master
 
     crs.execute(
