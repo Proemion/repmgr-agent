@@ -1,10 +1,25 @@
-# repmgr-agent
+[![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://github.com/Proemion/repmgr-agent/blob/master/LICENSE)
 
-repmgr clusters need an agent to update the PGBouncer configuration on the
-application servers.
+# Mission statement
 
-This one stores all its configuration in the Postgres database so that
-the configuration is automatically replicated across the cluster.
+Postgres clusters managed by [repmgr](repmgr.org) use an agent
+to ensure application connectivity and proper node fencing.
+
+Since the agent is usually run in a situation where the cluster
+is recovering from a node failure, the agent needs to get its
+job done quickly and reliably. Our goal is to provide one that
+is easy to configure and understand, and defaults to failing
+in a safe way when crucial components are not available.
+
+# Key features
+
+* Configuration is stored in the database, so changes are automatically
+  replicated across nodes.
+* If the database is not available, fails violently to avoid accidentally
+  breaking the PGBouncers' configuration fixed by another master node.
+* One application server node being down does not prevent the other nodes
+  from being updated.
+* Small codebase which is easy to understand.
 
 # Installation
 
@@ -50,3 +65,10 @@ You can now run `pgdeploy` at any time to update your servers or test
 the deployment.
 
 Enjoy!
+
+# Contributing
+
+Discussions, issues and pull requests are always welcome. Please keep
+in mind though that we want to keep the codebase as light as possible,
+so before sending us a pull request, please get in touch via an issue
+first.
