@@ -38,6 +38,7 @@ CREATE TABLE repmgr_<cluster name>.app_servers (
   name     VARCHAR(150),
   ip_addr  VARCHAR(150),
   username VARCHAR(150) DEFAULT 'postgres',
+  application_name VARCHAR(150) DEFAULT '',
   enabled  BOOLEAN DEFAULT 't'
 );
 ```
