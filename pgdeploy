@@ -41,9 +41,9 @@ def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master, tim
                 shell.run(["sudo", "service", "pgbouncer", "reload"])
     except spur.ssh.ConnectionError, err:
         if remote_host["application_name"]:
-            print >> sys.stderr, "%s [%s]: %s" % (remote_host["ip_addr"], remote_host["application_name"], err.original_error.message)
+            print >> sys.stderr, "Could not update pgbouncer on %s [%s]: %s" % (remote_host["ip_addr"], remote_host["application_name"], err.original_error.message)
         else:
-            print >> sys.stderr, "%s: %s" % (remote_host["ip_addr"], err.original_error.message)
+            print >> sys.stderr, "Could not update pgbouncer on %s: %s" % (remote_host["ip_addr"], err.original_error.message)
 
 
 def main():
