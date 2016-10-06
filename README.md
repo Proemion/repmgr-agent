@@ -26,8 +26,8 @@ in a safe way when crucial components are not available.
 Install dependencies:
 
 ```
-apt-get install python-pip python-dev libffi-dev libssl-dev
-pip install spur cryptography
+apt-get --no-install-recommends install python-pip python-dev libffi-dev libssl-dev gcc
+pip install spur
 ```
 
 Create the config table that holds the application servers:
