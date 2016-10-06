@@ -22,11 +22,12 @@ def go_nodaemon(func, *args, **kwargs):
     return thr
 
 
-def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master):
+def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master, timeout):
     cluster_config = "/etc/pgbouncer/databases/%s.ini" % cluster_name
     with spur.SshShell(hostname=remote_host["ip_addr"],
                        username=remote_host["username"],
-                       missing_host_key=spur.ssh.MissingHostKey.accept) as shell:
+                       missing_host_key=spur.ssh.MissingHostKey.accept,
+                       connect_timeout=timeout) as shell:
         with shell.open(cluster_config, "wb") as pgbouncer:
             for database in databases:
                 if remote_host["application_name"] and "application_name" not in master["conninfo"]:
@@ -42,6 +43,7 @@ def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master):
 def main():
     parser = OptionParser("Usage: %prog [options]")
     parser.add_option("-c", "--cluster", help="name of the cluster")
+    parser.add_option("-t", "--timeout", help="timeout for the SSH connection in seconds [1]", type=int, default=1)
     parser.add_option("-p", "--pgconnstring",
                       default="host=/var/run/postgresql",
                       help="postgres connection string [host=/var/run/postgresql].")
@@ -97,7 +99,7 @@ def main():
     # Run deployment in parallel threads, one per remote host. They are not
     # daemonized, so pgdeploy will not exit until all the threads are finished.
     for remote in remote_hosts:
-        go_nodaemon(deploy_appserver_pgbouncer, options.cluster, remote, databases, master)
+        go_nodaemon(deploy_appserver_pgbouncer, options.cluster, remote, databases, master, options.timeout)
 
 if __name__ == '__main__':
     sys.exit(main())
