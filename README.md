@@ -52,6 +52,12 @@ INSERT INTO repmgr_<cluster name>.app_servers (name, ip_addr) VALUES
 ('someserver3', '192.168.123.3');
 ```
 
+Allow the postgres user to reload pgbouncer by editing `/etc/sudoers.d/pgbouncer`:
+
+```
+postgres ALL = NOPASSWD: /usr/sbin/service pgbouncer reload
+```
+
 Configure pgdeploy as repmgr's event_notification_command:
 
 ```

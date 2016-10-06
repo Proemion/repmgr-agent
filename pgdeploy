@@ -33,7 +33,10 @@ def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master):
                     print >> pgbouncer, "%s = %s application_name=%s" % (database["datname"], master["conninfo"], remote_host["application_name"])
                 else:
                     print >> pgbouncer, "%s = %s" % (database["datname"], master["conninfo"])
-        shell.run(["/usr/bin/service", "pgbouncer", "reload"])
+        if remote_host["username"] == "root":
+            shell.run(["service", "pgbouncer", "reload"])
+        else:
+            shell.run(["sudo", "service", "pgbouncer", "reload"])
 
 
 def main():
