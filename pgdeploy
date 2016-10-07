@@ -34,7 +34,7 @@ def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master, tim
                         connect_timeout=timeout) as shell:
             if os.path.isfile(pgpass):
                 with open(pgpass, "rb") as local_file:
-                    with ssh_shell.open(pgpass, "wb") as remote_file:
+                    with shell.open(pgpass, "wb") as remote_file:
                         shutil.copyfileobj(local_file, remote_file)
             with shell.open(cluster_config, "wb") as pgbouncer:
                 for database in databases:
