@@ -64,6 +64,22 @@ Configure pgdeploy as repmgr's event_notification_command:
 event_notification_command = /usr/local/bin/pgdeploy -c <cluster name>
 ```
 
+Prepare pgbouncer:
+
+```
+apt-get install pgbouncer
+mkdir /etc/pgbouncer/databases
+chown -R postgres. /etc/pgbouncer
+```
+
+Configure pgbouncer to include the config file that pgdeploy is going
+to create. To do this, edit `/etc/pgbouncer/pgbouncer.ini` like this:
+
+```
+[databases]
+%include /etc/pgbouncer/databases/<cluster name>.ini
+```
+
 Ensure that the `postgres` user on your database servers can SSH to
 the `postgres` user on the application servers without being prompted
 for a password by exchanging SSH keys.
