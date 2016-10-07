@@ -105,7 +105,8 @@ def main():
     # Run deployment in parallel threads, one per remote host. They are not
     # daemonized, so pgdeploy will not exit until all the threads are finished.
     for remote in remote_hosts:
-        go_nodaemon(deploy_appserver_pgbouncer, options.cluster, remote, databases, master, options.timeout)
+        thr = go_nodaemon(deploy_appserver_pgbouncer, options.cluster, remote, databases, master, options.timeout)
+        thr.name = remote["ip_addr"]
 
 if __name__ == '__main__':
     sys.exit(main())
