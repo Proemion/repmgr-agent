@@ -9,9 +9,11 @@
 
 import sys
 import spur
+import shutil
 import psycopg2
 import psycopg2.extras
 import threading
+import os.path
 
 from optparse import OptionParser
 
@@ -24,11 +26,16 @@ def go_nodaemon(func, *args, **kwargs):
 
 def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master, timeout):
     cluster_config = "/etc/pgbouncer/databases/%s.ini" % cluster_name
+    pgpass = os.path.expanduser("~/.pgpass")
     try:
         with spur.SshShell(hostname=remote_host["ip_addr"],
                         username=remote_host["username"],
                         missing_host_key=spur.ssh.MissingHostKey.accept,
                         connect_timeout=timeout) as shell:
+            if os.path.isfile(pgpass):
+                with open(pgpass, "rb") as local_file:
+                    with ssh_shell.open(pgpass, "wb") as remote_file:
+                        shutil.copyfileobj(local_file, remote_file)
             with shell.open(cluster_config, "wb") as pgbouncer:
                 for database in databases:
                     if remote_host["application_name"] and "application_name" not in master["conninfo"]:
