@@ -24,33 +24,92 @@ def go_nodaemon(func, *args, **kwargs):
     return thr
 
 
-def deploy_appserver_pgbouncer(cluster_name, remote_host, databases, master, timeout):
-    cluster_config = "/etc/pgbouncer/databases/%s.ini" % cluster_name
-    pgpass = os.path.expanduser("~/.pgpass")
-    try:
-        with spur.SshShell(hostname=remote_host["ip_addr"],
-                        username=remote_host["username"],
-                        missing_host_key=spur.ssh.MissingHostKey.accept,
-                        connect_timeout=timeout) as shell:
-            if os.path.isfile(pgpass):
-                with open(pgpass, "rb") as local_file:
-                    with shell.open(pgpass, "wb") as remote_file:
-                        shutil.copyfileobj(local_file, remote_file)
-            with shell.open(cluster_config, "wb") as pgbouncer:
-                for database in databases:
-                    if remote_host["application_name"] and "application_name" not in master["conninfo"]:
-                        print >> pgbouncer, "%s = %s application_name=%s" % (database["datname"], master["conninfo"], remote_host["application_name"])
-                    else:
-                        print >> pgbouncer, "%s = %s" % (database["datname"], master["conninfo"])
-            if remote_host["username"] == "root":
-                shell.run(["service", "pgbouncer", "reload"])
+class PgBouncerUpdater(object):
+    def __init__(self, cluster_name, pgconnstring, timeout=1):
+        self.cluster_name = cluster_name
+        self.pgconnstring = pgconnstring
+        self.timeout = timeout
+
+        self.conn = psycopg2.connect(pgconnstring)
+
+        crs = self.conn.cursor(cursor_factory = psycopg2.extras.DictCursor)
+
+        # Query current master
+
+        crs.execute(
+            """SELECT id, name, type, conninfo """
+            """FROM repmgr_%s.repl_nodes """
+            """WHERE active """
+            """AND type = 'master' """
+            """ORDER BY id""" % self.cluster_name
+        )
+
+        self.master = crs.fetchone()
+
+        # Query databases
+
+        crs.execute(
+            """SELECT datname """
+            """FROM pg_database """
+            """WHERE NOT datistemplate """
+            """AND datname NOT IN ('postgres')"""
+        )
+
+        self.databases = crs.fetchall()
+
+    def deploy_all(self):
+        if not self.databases:
+            raise ValueError("no databases")
+
+        crs = self.conn.cursor(cursor_factory = psycopg2.extras.DictCursor)
+
+        # Query application servers
+
+        crs.execute(
+            """SELECT * """
+            """FROM repmgr_%s.app_servers """
+            """WHERE enabled """
+            """ORDER BY id""" % self.cluster_name
+        )
+
+        self.remote_hosts = crs.fetchall()
+
+        if not self.remote_hosts:
+            raise ValueError("no remote hosts")
+
+        # Run deployment in parallel threads, one per remote host. They are not
+        # daemonized, so pgdeploy will not exit until all the threads are finished.
+        for remote in self.remote_hosts:
+            thr = go_nodaemon(self.deploy, remote)
+            thr.name = remote["ip_addr"]
+
+    def deploy(self, remote_host):
+        cluster_config = "/etc/pgbouncer/databases/%s.ini" % self.cluster_name
+        pgpass = os.path.expanduser("~/.pgpass")
+        try:
+            with spur.SshShell(hostname=remote_host["ip_addr"],
+                            username=remote_host["username"],
+                            missing_host_key=spur.ssh.MissingHostKey.accept,
+                            connect_timeout=self.timeout) as shell:
+                if os.path.isfile(pgpass):
+                    with open(pgpass, "rb") as local_file:
+                        with shell.open(pgpass, "wb") as remote_file:
+                            shutil.copyfileobj(local_file, remote_file)
+                with shell.open(cluster_config, "wb") as pgbouncer:
+                    for database in self.databases:
+                        if remote_host["application_name"] and "application_name" not in self.master["conninfo"]:
+                            print >> pgbouncer, "%s = %s application_name=%s" % (database["datname"], self.master["conninfo"], remote_host["application_name"])
+                        else:
+                            print >> pgbouncer, "%s = %s" % (database["datname"], self.master["conninfo"])
+                if remote_host["username"] == "root":
+                    shell.run(["service", "pgbouncer", "reload"])
+                else:
+                    shell.run(["sudo", "service", "pgbouncer", "reload"])
+        except spur.ssh.ConnectionError, err:
+            if remote_host["application_name"]:
+                print >> sys.stderr, "Could not update pgbouncer on %s [%s]: %s" % (remote_host["ip_addr"], remote_host["application_name"], err.original_error.message)
             else:
-                shell.run(["sudo", "service", "pgbouncer", "reload"])
-    except spur.ssh.ConnectionError, err:
-        if remote_host["application_name"]:
-            print >> sys.stderr, "Could not update pgbouncer on %s [%s]: %s" % (remote_host["ip_addr"], remote_host["application_name"], err.original_error.message)
-        else:
-            print >> sys.stderr, "Could not update pgbouncer on %s: %s" % (remote_host["ip_addr"], err.original_error.message)
+                print >> sys.stderr, "Could not update pgbouncer on %s: %s" % (remote_host["ip_addr"], err.original_error.message)
 
 
 def main():
@@ -66,54 +125,8 @@ def main():
         print >> sys.stderr, "Need cluster option and must not have any positional args, see --help"
         return 1
 
-    conn = psycopg2.connect(options.pgconnstring)
-    crs = conn.cursor(cursor_factory = psycopg2.extras.DictCursor)
-
-    # Query current master
-
-    crs.execute(
-        """SELECT id, name, type, conninfo """
-        """FROM repmgr_%s.repl_nodes """
-        """WHERE active """
-        """AND type = 'master' """
-        """ORDER BY id""" % options.cluster
-    )
-
-    master = crs.fetchone()
-
-    # Query databases
-
-    crs.execute(
-        """SELECT datname """
-        """FROM pg_database """
-        """WHERE NOT datistemplate """
-        """AND datname NOT IN ('postgres')"""
-    )
-
-    databases = crs.fetchall()
-
-    if not databases:
-        raise ValueError("no databases")
-
-    # Query application servers
-
-    crs.execute(
-        """SELECT * """
-        """FROM repmgr_%s.app_servers """
-        """WHERE enabled """
-        """ORDER BY id""" % options.cluster
-    )
-
-    remote_hosts = crs.fetchall()
-
-    if not remote_hosts:
-        raise ValueError("no remote hosts")
-
-    # Run deployment in parallel threads, one per remote host. They are not
-    # daemonized, so pgdeploy will not exit until all the threads are finished.
-    for remote in remote_hosts:
-        thr = go_nodaemon(deploy_appserver_pgbouncer, options.cluster, remote, databases, master, options.timeout)
-        thr.name = remote["ip_addr"]
+    updater = PgBouncerUpdater(options.cluster, options.pgconnstring, options.timeout)
+    updater.deploy_all()
 
 if __name__ == '__main__':
     sys.exit(main())
