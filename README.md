@@ -26,7 +26,7 @@ in a safe way when crucial components are not available.
 Install dependencies:
 
 ```
-apt-get --no-install-recommends install python-pip python-dev libffi-dev libssl-dev gcc
+apt-get --no-install-recommends install python-pip python-dev libffi-dev libssl-dev gcc python-psycopg2
 pip install spur
 ```
 
