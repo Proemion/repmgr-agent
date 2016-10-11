@@ -39,7 +39,8 @@ CREATE TABLE repmgr_<cluster name>.app_servers (
   ip_addr  VARCHAR(150),
   username VARCHAR(150) DEFAULT 'postgres',
   application_name VARCHAR(150) DEFAULT '',
-  enabled  BOOLEAN DEFAULT 't'
+  enabled  BOOLEAN DEFAULT 't',
+  auth_trust BOOLEAN DEFAULT 'f'
 );
 ```
 
@@ -88,6 +89,15 @@ You can now run `pgdeploy` at any time to update your servers or test
 the deployment.
 
 Enjoy!
+
+# Authentication
+
+If you have a lot of database users and you want to avoid listing all
+their passwords in the clear in `.pgpass`, you can set the `auth_trust`
+flag for specific PGBouncers. Thereby, you delegate authentication
+completely to the specified PGBouncer, relying solely on its `userlist.txt`
+being correct. For this to work, the PGBouncer instance needs an entry
+in `pg_hba.conf` with its authentication method set to `trust`.
 
 # Contributing
 

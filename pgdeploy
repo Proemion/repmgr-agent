@@ -96,7 +96,7 @@ class PgBouncerUpdater(object):
                             missing_host_key=spur.ssh.MissingHostKey.accept,
                             connect_timeout=self.timeout) as shell:
                 # Update ~/.pgpass
-                if os.path.isfile(pgpass):
+                if os.path.isfile(pgpass) and not remote_host["auth_trust"]:
                     with open(pgpass, "rb") as local_file:
                         with shell.open(pgpass, "wb") as remote_file:
                             shutil.copyfileobj(local_file, remote_file)
