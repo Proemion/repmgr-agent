@@ -24,6 +24,9 @@ def go_nodaemon(func, *args, **kwargs):
     return thr
 
 
+class DeployError(Exception):
+    pass
+
 class PgBouncerUpdater(object):
     def __init__(self, cluster_name, pgconnstring, timeout=1):
         self.cluster_name = cluster_name
@@ -84,8 +87,23 @@ class PgBouncerUpdater(object):
         # Run deployment in parallel threads, one per remote host. They are not
         # daemonized, so pgdeploy will not exit until all the threads are finished.
         for remote in self.remote_hosts:
-            thr = go_nodaemon(self.deploy, remote)
+            thr = go_nodaemon(self.safe_deploy, remote)
             thr.name = remote["ip_addr"]
+
+    def safe_deploy(self, remote_host):
+        # Due to a bug in pip, we sometimes get a RequirementParseError. In that case,
+        # simply retrying the request seems to help.
+        # See <http://stackoverflow.com/questions/35625488/>
+        import pkg_resources
+        from time import sleep
+        no_tries = 0
+        while no_tries < 3:
+            try:
+                return self.deploy(remote_host)
+            except pkg_resources.RequirementParseError:
+                sleep(1)
+                no_tries += 1
+        raise DeployError("exceeded number of retries for RequirementParseError workaround")
 
     def deploy(self, remote_host):
         cluster_config = "/etc/pgbouncer/databases/%s.ini" % self.cluster_name
