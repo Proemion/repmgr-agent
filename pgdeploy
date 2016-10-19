@@ -70,7 +70,7 @@ class PgBouncerUpdater(object):
             crs.execute(
                 """select conninfo """
                 """from repmgr_%s.node_public_info """
-                """where id = %%s""" % self.cluster_name, self.master["id"])
+                """where id = %%s""" % self.cluster_name, (self.master["id"], ))
             self.master.update(crs.fetchone())
 
     def deploy_all(self):
