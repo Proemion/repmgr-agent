@@ -99,6 +99,25 @@ completely to the specified PGBouncer, relying solely on its `userlist.txt`
 being correct. For this to work, the PGBouncer instance needs an entry
 in `pg_hba.conf` with its authentication method set to `trust`.
 
+# Using separate networks for client access and replication
+
+Normally, pgdeploy uses the conninfo from the `repmgr_<cluster>.repl_nodes`
+table to configure the remote pgbouncers. This does not work if you
+wish to use a separate backend network for replication, because in
+that case, `repmgr_<cluster>.repl_nodes` contains addresses that are
+unreachable for your clients. For such a setup, enable the `--public-net`
+option and add your masters' public conninfo into a table such as:
+
+```sql
+CREATE TABLE repmgr_<cluster>.node_public_info (
+  id INTEGER REFERENCES repmgr_<cluster>.repl_nodes(id),
+  conninfo TEXT
+);
+
+INSERT INTO repmgr_<cluster>.node_public_info VALUES
+  ( 1, 'host=123.123.123.123 port=5432' );
+```
+
 # Contributing
 
 Discussions, issues and pull requests are always welcome. Please keep

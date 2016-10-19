@@ -28,10 +28,11 @@ class DeployError(Exception):
     pass
 
 class PgBouncerUpdater(object):
-    def __init__(self, cluster_name, pgconnstring, timeout=1):
+    def __init__(self, cluster_name, pgconnstring, timeout=1, public_net=False):
         self.cluster_name = cluster_name
         self.pgconnstring = pgconnstring
         self.timeout = timeout
+        self.public_net = public_net
 
         self.conn = psycopg2.connect(pgconnstring)
 
@@ -63,6 +64,14 @@ class PgBouncerUpdater(object):
         # Query user accounts
         crs.execute("""select usename, passwd from pg_shadow""")
         self.shadow = crs.fetchall()
+
+        if self.public_net:
+            # Query public master address
+            crs.execute(
+                """select conninfo """
+                """from repmgr_%s.node_public_info """
+                """where id = %%s""" % self.cluster_name, self.master["id"])
+            self.master.update(crs.fetchone())
 
     def deploy_all(self):
         if not self.databases:
@@ -151,13 +160,15 @@ def main():
     parser.add_option("-p", "--pgconnstring",
                       default="host=/var/run/postgresql",
                       help="postgres connection string [host=/var/run/postgresql].")
+    parser.add_option("-P", "--public-net", action="store_true", default=False,
+                      help="get the master node's connstring from the node_public_info table instead of repl_nodes")
     options, posargs = parser.parse_args()
 
     if not options.cluster or posargs:
         print >> sys.stderr, "Need cluster option and must not have any positional args, see --help"
         return 1
 
-    updater = PgBouncerUpdater(options.cluster, options.pgconnstring, options.timeout)
+    updater = PgBouncerUpdater(options.cluster, options.pgconnstring, options.timeout, options.public_net)
     updater.deploy_all()
 
 if __name__ == '__main__':
