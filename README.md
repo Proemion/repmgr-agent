@@ -110,13 +110,17 @@ option and add your masters' public conninfo into a table such as:
 
 ```sql
 CREATE TABLE repmgr_<cluster>.node_public_info (
-  id INTEGER REFERENCES repmgr_<cluster>.repl_nodes(id),
+  id INTEGER PRIMARY KEY,
   conninfo TEXT
 );
 
 INSERT INTO repmgr_<cluster>.node_public_info VALUES
   ( 1, 'host=123.123.123.123 port=5432' );
 ```
+
+Note that the `id` column cannot be a Foreign Key to the `repl_nodes`
+table because repmgr deletes and re-creates records in that table
+during `standby register` commands.
 
 # Contributing
 
