@@ -122,6 +122,14 @@ Note that the `id` column cannot be a Foreign Key to the `repl_nodes`
 table because repmgr deletes and re-creates records in that table
 during `standby register` commands.
 
+To easily view the configuration, you can use this SQL statement:
+
+```sql
+SELECT rn.id, rn.name, rn.conninfo, npi.*
+FROM repmgr_proemion.repl_nodes rn
+INNER JOIN repmgr_proemion.node_public_info npi ON rn.id=npi.id;
+```
+
 # Contributing
 
 Discussions, issues and pull requests are always welcome. Please keep
