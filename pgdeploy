@@ -56,7 +56,6 @@ class PgBouncerUpdater(object):
             """SELECT datname """
             """FROM pg_database """
             """WHERE NOT datistemplate """
-            """AND datname NOT IN ('postgres')"""
         )
 
         self.databases = crs.fetchall()
