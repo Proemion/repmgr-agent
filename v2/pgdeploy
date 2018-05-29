@@ -116,7 +116,6 @@ class PgBouncerUpdater(object):
     def deploy(self, remote_host):
         cluster_config = "/etc/pgbouncer/databases/%s.ini" % self.cluster_name
         pgpass = os.path.expanduser("~/.pgpass")
-        print remote_host["ip_addr"]
         try:
             with spur.SshShell(hostname=remote_host["ip_addr"],
                             username=remote_host["username"],
