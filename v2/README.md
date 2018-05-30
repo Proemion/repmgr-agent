@@ -34,7 +34,7 @@ Create the config table that holds the application servers:
 
 ```sql
 CREATE TABLE repmgr.app_servers (
-  node_id SERIAL,
+  node_id SERIAL PRIMARY KEY,
   node_name     VARCHAR(150),
   ip_addr  VARCHAR(150),
   username VARCHAR(150) DEFAULT 'postgres',
