@@ -142,9 +142,9 @@ class PgBouncerUpdater(object):
 
                 # Reload pgbouncer
                 if remote_host["username"] == "root":
-                    shell.run(["systemctl", "reload", "pgbouncer"])
+                    shell.run(["service", "pgbouncer", "reload"])
                 else:
-                    shell.run(["sudo", "systemctl", "reload", "pgbouncer"])
+                    shell.run(["sudo", "service", "pgbouncer", "reload"])
         except spur.ssh.ConnectionError, err:
             if remote_host["application_name"]:
                 print >> sys.stderr, "Could not update pgbouncer on %s [%s]: %s" % (remote_host["ip_addr"], remote_host["application_name"], err.original_error.message)
