@@ -33,9 +33,9 @@ pip install spur
 Create the config table that holds the application servers:
 
 ```sql
-CREATE TABLE repmgr_<cluster name>.app_servers (
-  id SERIAL PRIMARY KEY,
-  name     VARCHAR(150),
+CREATE TABLE repmgr.app_servers (
+  node_id SERIAL PRIMARY KEY,
+  node_name     VARCHAR(150),
   ip_addr  VARCHAR(150),
   username VARCHAR(150) DEFAULT 'postgres',
   application_name VARCHAR(150) DEFAULT '',
@@ -47,7 +47,7 @@ CREATE TABLE repmgr_<cluster name>.app_servers (
 Add application servers to the table:
 
 ```sql
-INSERT INTO repmgr_<cluster name>.app_servers (name, ip_addr) VALUES
+INSERT INTO repmgr.app_servers (node_name, ip_addr) VALUES
 ('someserver1', '192.168.123.1'),
 ('someserver2', '192.168.123.2'),
 ('someserver3', '192.168.123.3');
@@ -64,6 +64,7 @@ Configure pgdeploy as repmgr's event_notification_command:
 ```
 event_notification_command = /usr/local/bin/pgdeploy -c <cluster name>
 ```
+(Cluster name is used for pgbouncer configuration file name!)
 
 Prepare pgbouncer:
 
@@ -101,24 +102,24 @@ in `pg_hba.conf` with its authentication method set to `trust`.
 
 # Using separate networks for client access and replication
 
-Normally, pgdeploy uses the conninfo from the `repmgr_<cluster>.repl_nodes`
+Normally, pgdeploy uses the conninfo from the `repmgr.nodes`
 table to configure the remote pgbouncers. This does not work if you
 wish to use a separate backend network for replication, because in
-that case, `repmgr_<cluster>.repl_nodes` contains addresses that are
+that case, `repmgr.nodes` contains addresses that are
 unreachable for your clients. For such a setup, enable the `--public-net`
 option and add your masters' public conninfo into a table such as:
 
 ```sql
-CREATE TABLE repmgr_<cluster>.node_public_info (
-  id INTEGER PRIMARY KEY,
+CREATE TABLE repmgr.node_public_info (
+  node_id INTEGER PRIMARY KEY,
   conninfo TEXT
 );
 
-INSERT INTO repmgr_<cluster>.node_public_info VALUES
+INSERT INTO repmgr.node_public_info VALUES
   ( 1, 'host=123.123.123.123 port=5432' );
 ```
 
-Note that the `id` column cannot be a Foreign Key to the `repl_nodes`
+Note that the `node_id` column cannot be a Foreign Key to the `nodes`
 table because repmgr deletes and re-creates records in that table
 during `standby register` commands.
 
@@ -126,8 +127,8 @@ To easily view the configuration, you can use this SQL statement:
 
 ```sql
 SELECT rn.id, rn.name, rn.conninfo, npi.*
-FROM repmgr_proemion.repl_nodes rn
-INNER JOIN repmgr_proemion.node_public_info npi ON rn.id=npi.id;
+FROM repmgr.nodes rn
+INNER JOIN repmgr.node_public_info npi ON rn.id=npi.id;
 ```
 
 # Contributing

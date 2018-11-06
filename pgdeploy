@@ -41,11 +41,11 @@ class PgBouncerUpdater(object):
         # Query current master
 
         crs.execute(
-            """SELECT id, name, type, conninfo """
-            """FROM repmgr_%s.repl_nodes """
+            """SELECT node_id, node_name, type, conninfo """
+            """FROM repmgr.nodes """
             """WHERE active """
-            """AND type = 'master' """
-            """ORDER BY id""" % self.cluster_name
+            """AND type = 'primary' """
+            """ORDER BY node_id"""
         )
 
         self.master = crs.fetchone()
@@ -68,8 +68,8 @@ class PgBouncerUpdater(object):
             # Query public master address
             crs.execute(
                 """select conninfo """
-                """from repmgr_%s.node_public_info """
-                """where id = %%s""" % self.cluster_name, (self.master["id"], ))
+                """from repmgr.node_public_info """
+                """where node_id = %s""", (self.master["node_id"], ))
             self.master["conninfo"] = crs.fetchone()["conninfo"]
 
     def deploy_all(self):
@@ -82,9 +82,9 @@ class PgBouncerUpdater(object):
 
         crs.execute(
             """SELECT * """
-            """FROM repmgr_%s.app_servers """
+            """FROM repmgr.app_servers """
             """WHERE enabled """
-            """ORDER BY id""" % self.cluster_name
+            """ORDER BY node_id"""
         )
 
         self.remote_hosts = crs.fetchall()
@@ -142,9 +142,9 @@ class PgBouncerUpdater(object):
 
                 # Reload pgbouncer
                 if remote_host["username"] == "root":
-                    shell.run(["service", "pgbouncer", "reload"])
+                    shell.run(["systemctl", "reload", "pgbouncer"])
                 else:
-                    shell.run(["sudo", "service", "pgbouncer", "reload"])
+                    shell.run(["sudo", "systemctl", "reload", "pgbouncer"])
         except spur.ssh.ConnectionError, err:
             if remote_host["application_name"]:
                 print >> sys.stderr, "Could not update pgbouncer on %s [%s]: %s" % (remote_host["ip_addr"], remote_host["application_name"], err.original_error.message)
@@ -172,3 +172,4 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+   
