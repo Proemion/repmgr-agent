@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # kate: space-indent on; indent-width 4; replace-tabs on;
 #
@@ -131,25 +131,25 @@ class PgBouncerUpdater(object):
                 with shell.open(cluster_config, "wb") as pgbouncer:
                     for database in self.databases:
                         if remote_host["application_name"] and "application_name" not in self.master["conninfo"]:
-                            print >> pgbouncer, "%s = %s application_name=%s" % (database["datname"], self.master["conninfo"], remote_host["application_name"])
+                            print("%s = %s application_name=%s" % (database["datname"], self.master["conninfo"], remote_host["application_name"]), file=pgbouncer)
                         else:
-                            print >> pgbouncer, "%s = %s" % (database["datname"], self.master["conninfo"])
+                            print("%s = %s" % (database["datname"], self.master["conninfo"]), file=pgbouncer)
 
                 # Update userlist.txt
                 with shell.open("/etc/pgbouncer/userlist.txt", "wb") as userlist:
                     for account in self.shadow:
-                        print >> userlist, '"%s" "%s"' % (account["usename"], account["passwd"])
+                        print('"%s" "%s"' % (account["usename"], account["passwd"]), file=userlist)
 
                 # Reload pgbouncer
                 if remote_host["username"] == "root":
                     shell.run(["service", "pgbouncer", "reload"])
                 else:
                     shell.run(["sudo", "service", "pgbouncer", "reload"])
-        except spur.ssh.ConnectionError, err:
+        except spur.ssh.ConnectionError as err:
             if remote_host["application_name"]:
-                print >> sys.stderr, "Could not update pgbouncer on %s [%s]: %s" % (remote_host["ip_addr"], remote_host["application_name"], err.original_error.message)
+                print("Could not update pgbouncer on %s [%s]: %s" % (remote_host["ip_addr"], remote_host["application_name"], err.original_error.message), file=sys.stderr)
             else:
-                print >> sys.stderr, "Could not update pgbouncer on %s: %s" % (remote_host["ip_addr"], err.original_error.message)
+                print("Could not update pgbouncer on %s: %s" % (remote_host["ip_addr"], err.original_error.message), file=sys.stderr)
 
 
 def main():
@@ -164,7 +164,7 @@ def main():
     options, posargs = parser.parse_args()
 
     if not options.cluster or posargs:
-        print >> sys.stderr, "Need cluster option and must not have any positional args, see --help"
+        print("Need cluster option and must not have any positional args, see --help", file=sys.stderr)
         return 1
 
     updater = PgBouncerUpdater(options.cluster, options.pgconnstring, options.timeout, options.public_net)
